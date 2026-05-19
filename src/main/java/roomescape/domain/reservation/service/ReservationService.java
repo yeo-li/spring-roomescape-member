@@ -141,11 +141,8 @@ public class ReservationService {
             throw new GeneralException(ReservationErrorType.PAST_RESERVATION_CANCEL);
         }
 
-        Reservation canceledReservation = Reservation.reconstruct(reservation.getId(), reservation.getName(),
-            reservation.getDate(), reservation.getTime(), reservation.getTheme(), LocalDateTime.now(clock),
-            reservation.getDeletedAt());
-
-        return ReservationMapper.toCancelResponseDto(reservationRepository.update(canceledReservation));
+        return ReservationMapper.toCancelResponseDto(
+            reservationRepository.cancelReservationById(id, LocalDateTime.now(clock)));
     }
 
     private Reservation createReservation(ReservationCreateRequestDto requestDto) {

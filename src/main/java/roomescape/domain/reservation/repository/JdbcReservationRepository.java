@@ -144,25 +144,47 @@ public class JdbcReservationRepository implements ReservationRepository {
             SET name = :name,
                 date = :date,
                 time_id = :timeId,
-                theme_id = :themeId,
-                canceled_at = :canceledAt
+                theme_id = :themeId
             WHERE id = :id
               AND deleted_at IS NULL
+              AND canceled_at IS NULL
             """;
         SqlParameterSource parameters = new MapSqlParameterSource()
             .addValue("id", reservation.getId())
             .addValue("name", reservation.getName())
             .addValue("date", reservation.getDate())
             .addValue("timeId", reservation.getTime().getId())
-            .addValue("themeId", reservation.getTheme().getId())
-            .addValue("canceledAt", reservation.getCanceledAt());
+            .addValue("themeId", reservation.getTheme().getId());
+
         int updatedRowCount = jdbcTemplate.update(sql, parameters);
         if (updatedRowCount == 0) {
             throw new GeneralException(ReservationErrorType.RESERVATION_NOT_FOUND);
         }
 
         return Reservation.reconstruct(reservation.getId(), reservation.getName(), reservation.getDate(),
-            reservation.getTime(), reservation.getTheme(), reservation.getCanceledAt(), reservation.getDeletedAt());
+            reservation.getTime(), reservation.getTheme(), null, reservation.getDeletedAt());
+    }
+
+    @Override
+    public Reservation cancelReservationById(Long id, LocalDateTime dateTime) {
+        String sql = """
+            UPDATE reservation
+            SET canceled_at = :canceledAt
+            WHERE id = :id
+              AND deleted_at IS NULL
+              AND canceled_at IS NULL
+            """;
+        SqlParameterSource parameters = new MapSqlParameterSource()
+            .addValue("canceledAt", dateTime)
+            .addValue("id", id);
+
+        int updatedRowCount = jdbcTemplate.update(sql, parameters);
+        if (updatedRowCount == 0) {
+            throw new GeneralException(ReservationErrorType.RESERVATION_NOT_FOUND);
+        }
+
+        return findReservationByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new GeneralException(ReservationErrorType.RESERVATION_NOT_FOUND));
     }
 
     private Reservation mapReservation(ResultSet rs) throws SQLException {
