@@ -109,9 +109,7 @@ class ReservationServiceTest {
             Theme theme = themeRepository.save(
                 Theme.create("테마 이름", "테마 설명", "https://roomescape.com/images/themes/ring-banner.png"));
             Reservation reservation = reservationRepository.save(Reservation.create("제이콥", date, time, theme));
-            reservationRepository.update(Reservation.reconstruct(reservation.getId(), reservation.getName(),
-                reservation.getDate(), reservation.getTime(), reservation.getTheme(),
-                LocalDateTime.of(2026, 4, 30, 10, 0), null));
+            reservationRepository.cancelReservationById(reservation.getId(), LocalDateTime.of(2026, 4, 30, 10, 0));
 
             // when
             List<ReservationResponseDto> actual = reservationService.getReservations();
@@ -770,14 +768,6 @@ class ReservationServiceTest {
     }
 
     private void cancel(Reservation reservation) {
-        reservationRepository.update(Reservation.reconstruct(
-            reservation.getId(),
-            reservation.getName(),
-            reservation.getDate(),
-            reservation.getTime(),
-            reservation.getTheme(),
-            LocalDateTime.now(fixedClock),
-            null
-        ));
+        reservationRepository.cancelReservationById(reservation.getId(), LocalDateTime.now(fixedClock));
     }
 }
